@@ -1,18 +1,55 @@
-const goods = [
-   {title: 'Shirt', price: 150},
-   {title: 'Socks', price: 10},
-   {title: 'Jacket', price: 100},
-];
+function makeGETRequest(url, callback) {
+   let xhr;
 
-const renderGoodsItem = (title, price) => {
-   return `<div class="goods-item"><h3>${title}</h3><p>${price}</p></div>`
-};
+   if (window.XMLHttpRequest) {
+      xhr = new XMLHttpRequest();
+   } else if (window.ActiveXObject) {
+      xhr = new ActiveXObject("Microsoft.XMLHTTP");
+   }
 
-const renderGoodsList = (list) => {
-   let goodsList = list.map(item => renderGoodsItem(item.title, item.price));
-   document.querySelector('.goods-list').innerHTML = goodsList;
-   console.log(goodsList);
-   
+   xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) {
+         callback(xhr.responseText);
+      }
+   }
+
+   xhr.open('GET', url, true);
+   xhr.send();
 }
 
-renderGoodsList(goods);
+const API_URL = 'https://raw.githubusercontent.com/GeekBrainsTutorial/online-store-api/master/responses';
+
+
+class GoodsItem {
+   constructor(product_name, price) {
+      this.product_name = product_name;
+      this.price = price;
+   }
+   render() {
+      return `<div class="goods-item"><h3>${this.product_name}</h3><p>${this.price}</p></div>`
+   }
+}
+
+class GoodsList {
+   constructor() {
+      this.goods = [];
+   }
+   fetchGoods(cb) {
+      makeGETRequest(`${API_URL}/catalogData.json`, (goods) => {
+         this.goods = JSON.parse(goods);
+         cb();
+      })
+   }
+   render() {
+      let listHtml = '';
+      this.goods.forEach(good => {
+         const goodItem = new GoodsItem(good.product_name, good.price);
+         listHtml += goodItem.render();
+      });
+      document.querySelector('.goods-list').innerHTML = listHtml;
+   }
+}
+const list = new GoodsList();
+list.fetchGoods(() => {
+   list.render();
+});
